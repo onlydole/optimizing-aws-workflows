@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { App, RemoteBackend, TerraformOutput, TerraformStack, Token } from "cdktf";
+import { App, RemoteBackend, TerraformStack, Token } from "cdktf";
 import { AwsProvider } from "./.gen/providers/aws";
 import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
 import { Eks } from "./.gen/modules/terraform-aws-modules/aws/eks";
@@ -50,6 +50,7 @@ class MyStack extends TerraformStack {
       subnets: Token.asList(vpc.publicSubnetsOutput),
       vpcId: vpc.vpcIdOutput,
       writeKubeconfig: false,
+      manageAwsAuth: false,
       workerGroups: [
         {
           asgDesiredCapacity: 3,
