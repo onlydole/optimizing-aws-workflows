@@ -32,12 +32,12 @@ class MyStack extends TerraformStack {
       privateSubnets: ['10.0.1.0/24', '10.0.2.0/24', '10.0.3.0/24'], //TODO: update to use locals
       publicSubnets: ['10.0.101.0/24', '10.0.102.0/24', '10.0.103.0/24'], //TODO: update to use locals
       publicSubnetTags: {
-          "kubernetes.io/role/elb":"1",
-          "kubernetes.io/cluster/optimize":"shared", //TODO: update to use variable
+        "kubernetes.io/role/elb": "1",
+        "kubernetes.io/cluster/optimize": "shared", //TODO: update to use variable
       },
       privateSubnetTags: {
-        "kubernetes.io/role/internal-elb":"1",
-        "kubernetes.io/cluster/optimize":"shared", //TODO: update to use variable
+        "kubernetes.io/role/internal-elb": "1",
+        "kubernetes.io/cluster/optimize": "shared", //TODO: update to use variable
       },
       enableDnsHostnames: true,
       enableNatGateway: true,
@@ -51,9 +51,9 @@ class MyStack extends TerraformStack {
       vpcId: vpc.vpcIdOutput,
       writeKubeconfig: false,
       workerGroups: [
-        { 
+        {
           asgDesiredCapacity: 3,
-          asgMaxSize:  5,
+          asgMaxSize: 5,
           instanceType: "m5.large",
         }
       ],
