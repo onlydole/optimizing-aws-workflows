@@ -11,6 +11,14 @@ class MyStack extends TerraformStack {
     const cidr = "10.0.0.0/16";
 
 
+    new RemoteBackend(this, {
+      hostname: "app.terraform.io",
+      organization: "onlydole",
+      workspaces: {
+        name: "optimizing-aws-workflows",
+      },
+    });
+
     // define resources here
     new AwsProvider(this, "aws", {
       region: "us-west-2",
