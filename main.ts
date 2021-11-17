@@ -1,16 +1,16 @@
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack, RemoteBackend } from "cdktf";
 import { AwsProvider } from "./.gen/providers/aws";
 import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
-
+import { Eks } from "./.gen/modules/terraform-aws-modules/aws/eks";
 class MyStack extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
 
-    const projectName = "optimize";
-    const cidr = "10.0.0.0/16";
+    const projectName = "optimize"; //TODO: Use Terraform vars
+    const cidr = "10.0.0.0/16"; //TODO: Use Terraform vars
 
-
+    // Terraform Cloud Remote Backend
     new RemoteBackend(this, {
       hostname: "app.terraform.io",
       organization: "onlydole",
@@ -19,12 +19,13 @@ class MyStack extends TerraformStack {
       },
     });
 
-    // define resources here
+    // AWS Provider Configuration
     new AwsProvider(this, "aws", {
       region: "us-west-2",
     });
 
-    new Vpc(this, "vpc", {
+    // Create a VPC with three public subnets and three private subnets
+    const vpc = new Vpc(this, "vpc", {
       name: projectName,
       cidr: cidr,
       azs: ["us-west-2a", "us-west-2b", "us-west-2c"], //TODO: update to use data source
@@ -41,8 +42,25 @@ class MyStack extends TerraformStack {
       enableDnsHostnames: true,
       enableNatGateway: true,
     });
-  }
-}
+
+    // Create an EKS cluster
+    new Eks(this, "eks", {
+      clusterName: projectName,
+      clusterVersion: "1.21",
+      subnets: vpc.privateSubnets,
+      vpcId: vpc.vpcIdOutput,
+      writeKubeconfig: false,
+      workerGroups: [
+        { 
+          asgDesiredCapacity: 3,
+          asgMaxSize:  5,
+          instanceType: "m5.large",
+        }
+      ],
+    });
+
+  } // end MyStack
+} // end Class
 
 const app = new App();
 new MyStack(app, "optimizing-aws-workflows");
