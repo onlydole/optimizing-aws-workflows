@@ -43,7 +43,6 @@ class MyStack extends TerraformStack {
       enableNatGateway: true,
     });
 
-    // Create an EKS cluster
     new Eks(this, "eks", {
       clusterName: projectName,
       clusterVersion: "1.21",
@@ -53,9 +52,9 @@ class MyStack extends TerraformStack {
       manageAwsAuth: false,
       workerGroups: [
         {
-          asgDesiredCapacity: 3,
-          asgMaxSize: 5,
-          instanceType: "m5.large",
+          asg_desired_capacity: 3,
+          asg_max_size: 5,
+          instance_type: "m5.large",
         }
       ],
     });
