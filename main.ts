@@ -1,6 +1,7 @@
 import { Construct } from "constructs";
 import { App, RemoteBackend, TerraformStack, Token } from "cdktf";
-import { AwsProvider } from "./.gen/providers/aws";
+import { AwsProvider, EKS } from "./.gen/providers/aws";
+import { KubernetesProvider } from "./.gen/providers/kubernetes";
 import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
 import { Eks } from "./.gen/modules/terraform-aws-modules/aws/eks";
 class MyStack extends TerraformStack {
@@ -29,8 +30,8 @@ class MyStack extends TerraformStack {
       name: projectName,
       cidr: cidr,
       azs: ["us-west-2a", "us-west-2b", "us-west-2c"], //TODO: update to use data source
-      privateSubnets: ['10.0.1.0/24', '10.0.2.0/24', '10.0.3.0/24'], //TODO: update to use locals
-      publicSubnets: ['10.0.101.0/24', '10.0.102.0/24', '10.0.103.0/24'], //TODO: update to use locals
+      privateSubnets: ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"], //TODO: update to use locals
+      publicSubnets: ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"], //TODO: update to use locals
       publicSubnetTags: {
         "kubernetes.io/role/elb": "1",
         "kubernetes.io/cluster/optimize": "shared", //TODO: update to use variable
@@ -49,16 +50,32 @@ class MyStack extends TerraformStack {
       subnets: Token.asList(vpc.publicSubnetsOutput),
       vpcId: vpc.vpcIdOutput,
       writeKubeconfig: false,
-      manageAwsAuth: false,
       workerGroups: [
         {
           asg_desired_capacity: 3,
           asg_max_size: 5,
           instance_type: "m5.large",
-        }
+        },
       ],
     });
 
+    const eksData = new EKS.DataAwsEksCluster(this, "eksData", {
+      name: projectName,
+    });
+    const eksAuthData = new EKS.DataAwsEksClusterAuth(this, "eksAuth", {
+      name: projectName,
+    });
+
+    // Kubernetes Provider Configuration
+    new KubernetesProvider(this, "kubernetes", {
+      host: Token.asString(eksData.endpoint),
+      clusterCaCertificate: Token.asString(
+        Buffer.from(eksData.certificateAuthority("0").data, "base64").toString(
+          "binary"
+        )
+      ),
+      token: Token.asString(eksAuthData.token),
+    });
   } // end MyStack
 } // end Class
 
