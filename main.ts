@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { App, RemoteBackend, TerraformStack, Token } from "cdktf";
+import { App, Fn, RemoteBackend, TerraformStack, Token } from "cdktf";
 import { AwsProvider, EKS } from "./.gen/providers/aws";
 import { KubernetesProvider } from "./.gen/providers/kubernetes";
 import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
@@ -44,7 +44,7 @@ class MyStack extends TerraformStack {
       enableNatGateway: true,
     });
 
-    new Eks(this, "eks", {
+    const eksCluster = new Eks(this, "eks", {
       clusterName: projectName,
       clusterVersion: "1.21",
       subnets: Token.asList(vpc.publicSubnetsOutput),
@@ -59,22 +59,19 @@ class MyStack extends TerraformStack {
       ],
     });
 
-    const eksData = new EKS.DataAwsEksCluster(this, "eksData", {
-      name: projectName,
-    });
-    const eksAuthData = new EKS.DataAwsEksClusterAuth(this, "eksAuth", {
-      name: projectName,
-    });
-
     // Kubernetes Provider Configuration
     new KubernetesProvider(this, "kubernetes", {
-      host: Token.asString(eksData.endpoint),
-      clusterCaCertificate: Token.asString(
-        Buffer.from(eksData.certificateAuthority("0").data, "base64").toString(
-          "binary"
-        )
+      host: eksCluster.clusterEndpointOutput,
+      clusterCaCertificate: Fn.base64decode(
+        new EKS.DataAwsEksCluster(this, "eksCaCert", {
+          name: projectName,
+        }).certificateAuthority("0").data
       ),
-      token: Token.asString(eksAuthData.token),
+      token: Token.asString(
+        new EKS.DataAwsEksClusterAuth(this, "eksAuth", {
+          name: projectName,
+        }).token
+      ),
     });
   } // end MyStack
 } // end Class
