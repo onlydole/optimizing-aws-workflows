@@ -8,8 +8,8 @@ class MyStack extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
 
-    const projectName = "optimize"; //TODO: Use Terraform vars
-    const cidr = "10.0.0.0/16"; //TODO: Use Terraform vars
+    const projectName = "optimize";
+    const cidr = "10.0.0.0/16";
 
     // Terraform Cloud Remote Backend
     new RemoteBackend(this, {
@@ -29,16 +29,16 @@ class MyStack extends TerraformStack {
     const vpc = new Vpc(this, "vpc", {
       name: projectName,
       cidr: cidr,
-      azs: ["us-west-2a", "us-west-2b", "us-west-2c"], //TODO: update to use data source
-      privateSubnets: ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"], //TODO: update to use locals
-      publicSubnets: ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"], //TODO: update to use locals
+      azs: ["us-west-2a", "us-west-2b", "us-west-2c"],
+      privateSubnets: ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"],
+      publicSubnets: ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"],
       publicSubnetTags: {
         "kubernetes.io/role/elb": "1",
-        "kubernetes.io/cluster/optimize": "shared", //TODO: update to use variable
+        "kubernetes.io/cluster/optimize": "shared",
       },
       privateSubnetTags: {
         "kubernetes.io/role/internal-elb": "1",
-        "kubernetes.io/cluster/optimize": "shared", //TODO: update to use variable
+        "kubernetes.io/cluster/optimize": "shared",
       },
       enableDnsHostnames: true,
       enableNatGateway: true,
@@ -55,6 +55,26 @@ class MyStack extends TerraformStack {
           asg_desired_capacity: 3,
           asg_max_size: 5,
           instance_type: "m5.large",
+        },
+      ],
+      fargateProfiles: [
+        {
+          name: "greenfield",
+          subnets: Token.asList(vpc.privateSubnetsOutput),
+          selectors: [
+            {
+              namespace: "kube-system",
+              labels: {
+                "k8s-app": "kube-dns",
+              },
+            },
+            {
+              namespace: "default",
+              labels: {
+                "WorkerType": "fargate",
+              },
+            },
+          ],
         },
       ],
     });
