@@ -12,6 +12,9 @@ class MyStack extends TerraformStack {
     const cidr = "10.0.0.0/16";
 
     // Terraform Cloud Remote Backend
+
+    // If you are forking this repository, change the 
+    // organization name to match your Terraform Cloud organization.
     new RemoteBackend(this, {
       hostname: "app.terraform.io",
       organization: "onlydole",
