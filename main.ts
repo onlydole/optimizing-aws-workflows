@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { App, Fn, RemoteBackend, TerraformStack, Token } from "cdktf";
-import { AwsProvider, EKS } from "./.gen/providers/aws";
+import { AwsProvider, eks } from "./.gen/providers/aws";
 import { KubernetesProvider } from "./.gen/providers/kubernetes";
 import { Vpc } from "./.gen/modules/terraform-aws-modules/aws/vpc";
 import { Eks } from "./.gen/modules/terraform-aws-modules/aws/eks";
@@ -12,6 +12,9 @@ class MyStack extends TerraformStack {
     const cidr = "10.0.0.0/16";
 
     // Terraform Cloud Remote Backend
+
+    // If you are forking this repository, change the 
+    // organization name to match your Terraform Cloud organization.
     new RemoteBackend(this, {
       hostname: "app.terraform.io",
       organization: "onlydole",
@@ -83,12 +86,12 @@ class MyStack extends TerraformStack {
     new KubernetesProvider(this, "kubernetes", {
       host: eksCluster.clusterEndpointOutput,
       clusterCaCertificate: Fn.base64decode(
-        new EKS.DataAwsEksCluster(this, "eksCaCert", {
+        new eks.DataAwsEksCluster(this, "eksCaCert", {
           name: projectName,
         }).certificateAuthority("0").data
       ),
       token: Token.asString(
-        new EKS.DataAwsEksClusterAuth(this, "eksAuth", {
+        new eks.DataAwsEksClusterAuth(this, "eksAuth", {
           name: projectName,
         }).token
       ),
